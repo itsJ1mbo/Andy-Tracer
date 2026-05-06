@@ -1,4 +1,5 @@
 #pragma once
+
 #include <list>
 
 class Scene;
@@ -7,24 +8,14 @@ class Light;
 class World
 {
 public:
-    World(Scene* c, const std::list<Light*>& oc) : cosas(c), otrasCosas(oc) {};
-    inline ~World() {
-        delete cosas;
-        cosas = nullptr;
-
-        for (auto c : otrasCosas) {
-            delete c;
-            c = nullptr;
-        }
-
-    }
+    World(Scene* c, const std::list<Light*>& oc) : things(c), lights(oc) {};
+    ~World();
    
-    inline Scene* GetScene() { return cosas; }
-
-    inline std::list<Light*> GetLights() const { return otrasCosas; }
+    inline Scene* GetScene() const { return things; }
+    inline std::list<Light*> GetLights() const { return lights; }
 
 private:
-    Scene* cosas;
-    std::list<Light*> otrasCosas;
+    Scene* things;
+    std::list<Light*> lights;
 };
 

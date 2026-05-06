@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Shape.h"
 #include "glm/vec3.hpp"
 #include "glm/geometric.hpp"
@@ -10,6 +11,7 @@ public:
 
     bool Intersect(const Ray& ray, float tMin, float tMax) const override;
     bool Intersect(const Ray& ray, float tMin, float tMax, ShapeIntersection& info) const override;
+
 private:
     glm::vec3 corner;
     glm::vec3 width;

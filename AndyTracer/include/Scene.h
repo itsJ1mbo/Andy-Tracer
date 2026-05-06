@@ -1,9 +1,12 @@
 #pragma once
+
 #include "Shape.h"
+
 class Scene : public Shape
 {
 public:
-    ~Scene() {
+    ~Scene() override
+    {
         for (auto s : others) {
             delete s;
             s = nullptr;

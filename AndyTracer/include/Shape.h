@@ -1,5 +1,5 @@
 #pragma once
-#include <list>
+
 #include <memory>
 #include "Material.h"
 #include "defs.h"

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Film.h"
 #include "Camera.h"
 
@@ -15,11 +16,11 @@ public:
     void Render();
 
 private:
-    Color RayColor(const Ray& r, int& reflexes);
+    Color RayColor(const Ray& r, int& ref);
 
-    Color Shade(const Ray& ray, ShapeIntersection& info, int& reflexes);
+    Color Shade(const Ray& ray, ShapeIntersection& info, int& ref);
 
-    glm::vec3 Reflect(ShapeIntersection& info);
+    glm::vec3 Reflect(const ShapeIntersection& info) const;
 
     const Camera camera;
     Film film; 

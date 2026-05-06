@@ -1,5 +1,7 @@
 #pragma once
+
 #include "Color.h"
+
 class Ray;
 struct ShapeIntersection;
 
@@ -12,7 +14,8 @@ public:
 
     virtual bool ProjectsShadows() { return false; }
 
-    virtual glm::vec3 ShadowDir(glm::vec3 p) { return glm::vec3(0, 0, 0); }
+    virtual glm::vec3 ShadowDir(const glm::vec3& p) { return glm::vec3(0, 0, 0); }
+
 protected:
     glm::vec3 specularColor;
     glm::vec3 diffuseColor;

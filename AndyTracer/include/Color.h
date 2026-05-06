@@ -3,7 +3,6 @@
 
 #include "glm/vec3.hpp"
 
-
 using Color = glm::vec3;
 
 // Constantes de colores

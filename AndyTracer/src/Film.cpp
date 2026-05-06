@@ -2,7 +2,7 @@
 
 void Film::AddPixel(Color color) {
     if (missingHeader) {
-        _out << "P3\n" << _tamX << ' ' << _tamY << "\n255\n";
+        out << "P3\n" << tamX << ' ' << tamY << "\n255\n";
         missingHeader = false;
     }
 
@@ -10,5 +10,5 @@ void Film::AddPixel(Color color) {
     int ig = (int)(255.99 * color.y);
     int ib = (int)(255.99 * color.z);
 
-    _out << ir << ' ' << ig << ' ' << ib << '\n';
+    out << ir << ' ' << ig << ' ' << ib << '\n';
 }
