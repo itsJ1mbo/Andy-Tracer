@@ -15,7 +15,7 @@
 int main(void) {
     std::ofstream outFile("imagen.ppm");
 
-    Film film(800, 600, outFile);
+    Film film(800, 600);
     Camera camera(
         glm::vec3(0, 0, 3),
         glm::vec3(0, 0, 0),
@@ -66,9 +66,13 @@ int main(void) {
 
     World* world = new World(scene, luces);
 
-    Renderer* renderer = new Renderer(film, camera, world, 0, 30);
+    Renderer* renderer = new Renderer(film, camera, world, 0, 1);
 
-    renderer->Render();
+    bool rendering = true;
+    while(rendering)
+    {
+        renderer->Render();
+    }
 
     delete renderer;
 

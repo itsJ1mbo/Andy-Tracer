@@ -2,14 +2,13 @@
 #define _FILM_H
 
 #include "Color.h"
+#include "PixelToaster/include/PixelToaster.h"
 #include <iostream>
 
 class Film 
 {
 public:
-    Film(int x, int y, std::ostream& output) : tamX(x), tamY(y), out(output), aspectRatio(1.0f*tamX / tamY) {}
-
-    Film(int x, int y) : Film(x, y, std::cout) {}
+    Film(int x, int y);
 
     void AddPixel(Color color);
 
@@ -17,15 +16,19 @@ public:
     int GetTamY() const { return tamY; }
     float GetAspectRatio() const { return aspectRatio; }
 
+    void Display();
+
 private:
     int tamX;
     int tamY;
 
-    std::ostream& out;
-
     float aspectRatio;
 
     bool missingHeader = true;
+
+    PixelToaster::Display window;
+
+    std::vector<PixelToaster::TrueColorPixel> pixels;
 };
 
 #endif

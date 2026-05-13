@@ -32,6 +32,7 @@ void Renderer::Render()
             film.AddPixel(c);
         }
     }
+    film.Display();
 }
 
 Color Renderer::RayColor(const Ray& r, int& ref)
