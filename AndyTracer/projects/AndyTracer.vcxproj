@@ -99,7 +99,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(CUDA_PATH)lib\x64\cudart.lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)lib\x64\cudart.lib;$(SolutionDir)dependencies\PixelToaster\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>PixelToaster_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -116,7 +117,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(CUDA_PATH)lib\x64\cudart.lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)dependencies\PixelToaster\;$(CUDA_PATH)lib\x64\cudart.lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>PixelToaster.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
