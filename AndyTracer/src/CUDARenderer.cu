@@ -1,9 +1,11 @@
 #include "CUDARenderer.cuh"
-//#include "World.h"
-//#include "Scene.h"
-//#include "Light.h"
-//#include "glm/geometric.hpp"
+#include <cuda.h>
 #include <cuda_runtime.h>
+#define GLM_FORCE_CUDA
+#include <glm/glm.hpp>
+#include "World.h"
+#include "Scene.h"
+#include "Light.h"
 #include <cstdio>
 
 __device__ void RayColor()
@@ -18,29 +20,26 @@ __global__ void SamplePixel()
     RayColor();
 }
 
-//CUDARenderer::CUDARenderer(const Film& f, const Camera& c, World* w, int r, int s) :  film(f), camera(c), world(w), reflexes(r), samples(s)
-//{
-//
-//}
-
-CUDARenderer::CUDARenderer(int r, int s) : reflexes(r), samples(s)
+CUDARenderer::CUDARenderer(const Film& f, const Camera& c, World* w, int r, int s) : film(f), camera(c), world(w), reflexes(r), samples(s)
 {
-
 }
 
 CUDARenderer::~CUDARenderer()
 {
-
+    delete world;
 }
 
 void CUDARenderer::Render()
 {
-    //dividimos la pantalla en una grid de bloques de 256 threads cada uno (16*16)
-    dim3 blockSize = (16, 16);
+    // Fix: Use curly braces or constructor parentheses
+    dim3 blockSize(16, 16);
     dim3 gridSize((800 + blockSize.x - 1) / blockSize.x,
         (600 + blockSize.y - 1) / blockSize.y);
+
     printf("Grid: (%d, %d, %d), Block: (%d, %d, %d)\n", gridSize.x, gridSize.y, gridSize.z, blockSize.x, blockSize.y, blockSize.z);
-    SamplePixel <<<gridSize, blockSize>>>();
+
+    SamplePixel <<<gridSize, blockSize >>>();
+
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         printf("CUDA Launch Error: %s\n", cudaGetErrorString(err));
@@ -54,6 +53,3 @@ void CUDARenderer::Render()
 
     printf("Frame terminado\n");
 }
-
-
-

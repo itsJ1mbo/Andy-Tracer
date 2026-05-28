@@ -1,7 +1,7 @@
 #include "Film.h"
 #include "Camera.h"
 #include "Sphere.h"
-#include "Renderer.h"
+//#include "Renderer.h"
 #include "Scene.h"
 #include "World.h"
 #include "DirectionalLight.h"
@@ -69,7 +69,7 @@ int main(void) {
 
     //Renderer* renderer = new Renderer(film, camera, world, 0, 1);
 
-    CUDARenderer* renderer = new CUDARenderer(10, 0);
+    CUDARenderer* renderer = new CUDARenderer(film, camera, world, 0, 1);
 
     bool rendering = true;
     while(rendering)
