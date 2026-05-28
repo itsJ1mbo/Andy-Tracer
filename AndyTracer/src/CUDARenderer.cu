@@ -1,7 +1,6 @@
 #include "CUDARenderer.cuh"
 #include <cuda.h>
 #include <cuda_runtime.h>
-#define GLM_FORCE_CUDA
 #include <glm/glm.hpp>
 #include "World.h"
 #include "Scene.h"
