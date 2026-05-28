@@ -9,6 +9,7 @@
 #include "Square.h"
 #include "ConstantTexture.h"
 #include "CheckerTexture.h"
+#include "CUDARenderer.cuh"
 
 #include <fstream>
 
@@ -66,7 +67,9 @@ int main(void) {
 
     World* world = new World(scene, luces);
 
-    Renderer* renderer = new Renderer(film, camera, world, 0, 1);
+    //Renderer* renderer = new Renderer(film, camera, world, 0, 1);
+
+    CUDARenderer* renderer = new CUDARenderer(10, 0);
 
     bool rendering = true;
     while(rendering)
