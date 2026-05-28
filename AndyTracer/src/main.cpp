@@ -1,7 +1,7 @@
 #include "Film.h"
 #include "Camera.h"
 #include "Sphere.h"
-//#include "Renderer.h"
+#include "Renderer.h"
 #include "Scene.h"
 #include "World.h"
 #include "DirectionalLight.h"

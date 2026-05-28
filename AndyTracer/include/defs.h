@@ -11,3 +11,10 @@ struct ShapeIntersection {
     glm::vec3 normal;
     glm::vec2 uv;
 };
+
+using integer8 = unsigned char;
+
+struct GPUPixel
+{
+    integer8 b, g, r, a;
+};

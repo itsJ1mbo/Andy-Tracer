@@ -2,6 +2,7 @@
 
 #include "Film.h"
 #include "Camera.h"
+#include "Color.h"
 
 class World;
 struct ShapeIntersection;

@@ -29,7 +29,7 @@ void Renderer::Render()
                 c += RayColor(ray_primary, r);
             }
             c /= samples;
-            film.AddPixel(c);
+            film.AddPixel(c, x, y);
         }
     }
     film.Display();
