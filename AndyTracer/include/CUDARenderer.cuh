@@ -1,4 +1,5 @@
 #pragma once
+#include "defs.h"
 #include "Film.h"
 
 class World;
@@ -7,7 +8,7 @@ struct ShapeIntersection;
 class CUDARenderer
 {
 public:
-    CUDARenderer(const Film& f, int r);
+    CUDARenderer(const Film& f, const Camera& cam, int r);
 
     ~CUDARenderer();
 
@@ -15,7 +16,13 @@ public:
 
 private:
     Film film;
+    Camera* camera;
     int reflexes;
+
+    GPUPixel* pixelBuffer;
+
+    dim3 blockSize;
+    dim3 gridSize;
 
     const float rayEpsilon = 0.001f;
 };
