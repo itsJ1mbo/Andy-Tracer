@@ -5,6 +5,7 @@
 
 struct Shape;
 struct Scene;
+struct Light;
 struct ShapeIntersection;
 
 class CUDARenderer
@@ -21,6 +22,7 @@ private:
     Camera* cameraDevice;
     Shape* sceneShapesDevice;
     Scene* sceneDevice;
+    Light* sceneLightsDevice;
 
     int reflexes; 
 
@@ -28,6 +30,4 @@ private:
 
     dim3 blockSize;
     dim3 gridSize;
-
-    const float rayEpsilon = 0.001f;
 };

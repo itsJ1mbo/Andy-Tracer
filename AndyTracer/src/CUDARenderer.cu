@@ -5,15 +5,41 @@
 #include "Scene.h"
 #include <cstdio>
 
+#include "Light.h"
+
+__device__ GPUPixel Shade(Ray ray, Scene* scene, ShapeIntersection& info)
+{
+    Vector3 ret(0);
+
+    for(int i = 0; i < scene->lightCount; i++)
+    {
+        if(scene->lights[i].projectsShadow)
+        {
+            Vector3 dir = scene->lights[i].GetShadowDir(info.position);
+            //no queria tener que pasar esto a traves de todo el kernel
+            float rayEpsilon = 0.01f;
+            Ray shadowRay(info.position + dir * rayEpsilon, dir);
+            ShapeIntersection shadowInfo;
+            if(scene->Intersect(shadowRay, 0, INFINITY, shadowInfo))
+            {
+                continue;
+            }
+        }
+        ret = ret + scene->lights[i].Shade(ray, info);
+    }
+
+    ret = Vector3(fminf(1.0f, ret.x), fminf(1.0f, ret.y), fminf(1.0f, ret.z));
+    return GPUPixel(ret.x * 255.0f + 0.5f, ret.y * 255.0f + 0.5f, ret.z * 255.0f + 0.5f, 255);
+}
 
 __device__ GPUPixel RayColor(Ray ray, Scene* scene)
 {
-    for(int i = 0; i < scene->count; i++)
+    for(int i = 0; i < scene->shapeCount; i++)
     {
         ShapeIntersection info;
         if(scene->shapes[i].Intersect(ray, 0, INFINITY, info))
         {
-            return GPUPixel(255);
+            return Shade(ray, scene, info);
         }
     }
     return GPUPixel(0);
@@ -56,14 +82,21 @@ CUDARenderer::CUDARenderer(const Film& f, const Camera& cam, Scene* sc, int r) :
 
     //puntero en gpu a la escena
     //puntero al array de shapes de la escena que pasamos
-    size_t shapeSize = sizeof(Shape) * sc->count;
+    size_t shapesSize = sizeof(Shape) * sc->shapeCount;
     sceneShapesDevice = nullptr;
-    cudaMalloc(&sceneShapesDevice, shapeSize);
-    cudaMemcpy(sceneShapesDevice, sc->shapes, shapeSize, cudaMemcpyHostToDevice);
-    //creamos una copia temporal de la escena pero con el array de shapes de la gpu (el que acabamos de copiar)
+    cudaMalloc(&sceneShapesDevice, shapesSize);
+    cudaMemcpy(sceneShapesDevice, sc->shapes, shapesSize, cudaMemcpyHostToDevice);
+    //puntero al array de luces de la escena
+    size_t lightsSize = sizeof(Light) * sc->lightCount;
+    sceneLightsDevice = nullptr;
+    cudaMalloc(&sceneLightsDevice, lightsSize);
+    cudaMemcpy(sceneLightsDevice, sc->lights, lightsSize, cudaMemcpyHostToDevice);
+    //creamos una copia temporal de la escena pero con el array de shapes y de luces de la gpu (que acabamos de copiar)
     Scene tempScene;
     tempScene.shapes = sceneShapesDevice;
-    tempScene.count = sc->count;
+    tempScene.shapeCount = sc->shapeCount;
+    tempScene.lights = sceneLightsDevice;
+    tempScene.lightCount = sc->lightCount;
     //copiamos la escena temporal a la escena de gpu
     sceneDevice = nullptr;
     cudaMalloc(&sceneDevice, sizeof(Scene));
@@ -75,6 +108,7 @@ CUDARenderer::~CUDARenderer()
     cudaFree(pixelBufferDevice);
     cudaFree(cameraDevice);
     cudaFree(sceneShapesDevice);
+    cudaFree(sceneLightsDevice);
     cudaFree(sceneDevice);
 }
 

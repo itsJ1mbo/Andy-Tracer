@@ -15,6 +15,7 @@
     <ClInclude Include="..\include\CUDARenderer.cuh" />
     <ClInclude Include="..\include\defs.h" />
     <ClInclude Include="..\include\Film.h" />
+    <ClInclude Include="..\include\Light.h" />
     <ClInclude Include="..\include\Ray.h" />
     <ClInclude Include="..\include\Scene.h" />
     <ClInclude Include="..\include\Shape.h" />

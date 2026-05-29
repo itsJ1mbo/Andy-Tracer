@@ -58,6 +58,10 @@ __host__ __device__ inline Vector3 operator*(const Vector3& v, float t) {
     return t * v;
 }
 
+__host__ __device__ inline Vector3 operator*(const Vector3& u, const Vector3& v) {
+    return Vector3(u.x * v.x, u.y * v.y, u.z * v.z);
+}
+
 __host__ __device__ inline Vector3 operator/(const Vector3& v, float t) {
     return Vector3(v.x / t, v.y / t, v.z / t);
 }

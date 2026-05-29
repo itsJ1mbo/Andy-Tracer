@@ -93,9 +93,7 @@ __host__ inline Shape CreateSphere(Vector3 p, float r)
 
     sh.type = Sphere;
 
-    SphereData sd;
-    sd.radius = r;
-    sh.sphereData = sd;
+    sh.sphereData.radius = r;
 
     return sh;
 }
