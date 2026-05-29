@@ -3,13 +3,14 @@
 #include "Camera.h"
 #include "Film.h"
 
-class World;
+struct Shape;
+struct Scene;
 struct ShapeIntersection;
 
 class CUDARenderer
 {
 public:
-    CUDARenderer(const Film& f, const Camera& cam, int r);
+    CUDARenderer(const Film& f, const Camera& cam, Scene* sc, int r);
 
     ~CUDARenderer();
 
@@ -17,10 +18,13 @@ public:
 
 private:
     Film film;
-    Camera* camera;
+    Camera* cameraDevice;
+    Shape* sceneShapesDevice;
+    Scene* sceneDevice;
+
     int reflexes; 
 
-    GPUPixel* pixelBuffer;
+    GPUPixel* pixelBufferDevice;
 
     dim3 blockSize;
     dim3 gridSize;

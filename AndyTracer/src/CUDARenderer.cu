@@ -2,15 +2,24 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include "Ray.h"
+#include "Scene.h"
 #include <cstdio>
 
 
-__device__ GPUPixel RayColor(Ray ray)
+__device__ GPUPixel RayColor(Ray ray, Scene* scene)
 {
-    return GPUPixel(150);
+    for(int i = 0; i < scene->count; i++)
+    {
+        ShapeIntersection info;
+        if(scene->shapes[i].Intersect(ray, 0, INFINITY, info))
+        {
+            return GPUPixel(255);
+        }
+    }
+    return GPUPixel(0);
 }
 
-__global__ void SamplePixel(GPUPixel* buffer, int width, int height, Camera* cam)
+__global__ void SamplePixel(GPUPixel* buffer, int width, int height, Camera* cam, Scene* scene)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -21,11 +30,11 @@ __global__ void SamplePixel(GPUPixel* buffer, int width, int height, Camera* cam
         //indice del pixel
         int workId = y * width + x;
 
-        buffer[workId] = RayColor(cam->GetRay(x, y));
+        buffer[workId] = RayColor(cam->GetRay(x, y), scene);
     }
 }
 
-CUDARenderer::CUDARenderer(const Film& f, const Camera& cam, int r) : film(f),reflexes(r)
+CUDARenderer::CUDARenderer(const Film& f, const Camera& cam, Scene* sc, int r) : film(f),reflexes(r)
 {
     //tamano con el que lanzaremos el kernel
     //16*16 = 256 hilos por bloque
@@ -34,27 +43,45 @@ CUDARenderer::CUDARenderer(const Film& f, const Camera& cam, int r) : film(f),re
         (film.GetTamY() + blockSize.y - 1) / blockSize.y };
 
     //reservamos espacio para el buffer de pixeles
-    pixelBuffer = nullptr;
-    cudaMallocManaged(&pixelBuffer, film.GetTamX() * film.GetTamY() * sizeof(GPUPixel));
+    pixelBufferDevice = nullptr;
+    cudaMallocManaged(&pixelBufferDevice, film.GetTamX() * film.GetTamY() * sizeof(GPUPixel));
 
     //puntero en memoria de gpu a la camara
-    camera = nullptr;
-    cudaMallocManaged(&camera, sizeof(Camera));
-    camera->position = cam.position;
-    camera->delta_x = cam.delta_x;
-    camera->delta_y = cam.delta_y;
-    camera->position_top_left = cam.position_top_left;
+    cameraDevice = nullptr;
+    cudaMallocManaged(&cameraDevice, sizeof(Camera));
+    cameraDevice->position = cam.position;
+    cameraDevice->delta_x = cam.delta_x;
+    cameraDevice->delta_y = cam.delta_y;
+    cameraDevice->position_top_left = cam.position_top_left;
+
+    //puntero en gpu a la escena
+    //puntero al array de shapes de la escena que pasamos
+    size_t shapeSize = sizeof(Shape) * sc->count;
+    sceneShapesDevice = nullptr;
+    cudaMalloc(&sceneShapesDevice, shapeSize);
+    cudaMemcpy(sceneShapesDevice, sc->shapes, shapeSize, cudaMemcpyHostToDevice);
+    //creamos una copia temporal de la escena pero con el array de shapes de la gpu (el que acabamos de copiar)
+    Scene tempScene;
+    tempScene.shapes = sceneShapesDevice;
+    tempScene.count = sc->count;
+    //copiamos la escena temporal a la escena de gpu
+    sceneDevice = nullptr;
+    cudaMalloc(&sceneDevice, sizeof(Scene));
+    cudaMemcpy(sceneDevice, &tempScene, sizeof(Scene), cudaMemcpyHostToDevice);
 }
 
 CUDARenderer::~CUDARenderer()
 {
-    cudaFree(pixelBuffer);
+    cudaFree(pixelBufferDevice);
+    cudaFree(cameraDevice);
+    cudaFree(sceneShapesDevice);
+    cudaFree(sceneDevice);
 }
 
 void CUDARenderer::Render()
 {
     //lanzamos el kernel
-    SamplePixel <<<gridSize, blockSize >>>(pixelBuffer, film.GetTamX(), film.GetTamY(), camera);
+    SamplePixel <<<gridSize, blockSize >>>(pixelBufferDevice, film.GetTamX(), film.GetTamY(), cameraDevice, sceneDevice);
 
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
@@ -68,7 +95,7 @@ void CUDARenderer::Render()
     }
 
     //copiamos buffer de pixeles al de la ventana (no podemos usar el de la ventana directamente porque es de un tipo propio de la libreria)
-    film.CopyBuffer(pixelBuffer);
+    film.CopyBuffer(pixelBufferDevice);
 
     //mostramos el frame
     film.Display();

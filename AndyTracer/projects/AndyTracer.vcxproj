@@ -16,6 +16,8 @@
     <ClInclude Include="..\include\defs.h" />
     <ClInclude Include="..\include\Film.h" />
     <ClInclude Include="..\include\Ray.h" />
+    <ClInclude Include="..\include\Scene.h" />
+    <ClInclude Include="..\include\Shape.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\Film.cpp" />

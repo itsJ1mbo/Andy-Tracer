@@ -85,3 +85,9 @@ __host__ __device__ inline Vector3 normalize(const Vector3& v) {
     if (len == 0.0f) return Vector3(0.0f, 0.0f, 0.0f);
     return v * (1.0f / len);
 }
+
+struct ShapeIntersection
+{
+    Vector3 position;
+    Vector3 normal;
+};
