@@ -1,20 +1,25 @@
 #pragma once
-#include "glm/vec2.hpp"
-#include "glm/vec3.hpp"
-#include <memory>
-
-class Material;
-
-struct ShapeIntersection {
-    std::shared_ptr<Material> material;
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 uv;
-};
+#include "cuda_runtime.h"
 
 using integer8 = unsigned char;
 
 struct GPUPixel
 {
     integer8 b, g, r, a;
+
+    __host__ __device__ GPUPixel(integer8 n)
+    {
+        r = n;
+        g = n;
+        b = n;
+        a = n;
+    }
+
+    __host__ __device__ GPUPixel(integer8 red, integer8 green, integer8 blue, integer8 alpha)
+    {
+        r = red;
+        g = green;
+        b = blue;
+        a = alpha;
+    }
 };

@@ -2,16 +2,13 @@
 #define _FILM_H
 
 #include "PixelToaster/include/PixelToaster.h"
-#include <iostream>
-#include "Color.h"
-#include "defs.h"
+
+class GPUPixel;
 
 class Film 
 {
 public:
     Film(int x, int y);
-
-    void AddPixel(Color color, int x, int y);
 
     int GetTamX() const { return tamX; }
     int GetTamY() const { return tamY; }

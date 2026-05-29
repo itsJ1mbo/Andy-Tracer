@@ -1,14 +1,15 @@
 #include "CUDARenderer.cuh"
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <glm/glm.hpp>
-#include "World.h"
-#include "Scene.h"
-#include "Light.h"
 #include "defs.h"
 #include <cstdio>
 
-__device__ void RayColor(GPUPixel* buffer, int width, int height)
+__device__ GPUPixel RayColor()
+{
+    return GPUPixel(150);
+}
+
+__global__ void SamplePixel(GPUPixel* buffer, int width, int height)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -19,26 +20,18 @@ __device__ void RayColor(GPUPixel* buffer, int width, int height)
         //indice del pixel
         int workId = y * width + x;
 
-        buffer[workId].r = (int)(255.99f * ((float)x / (width - 1)));
-        buffer[workId].g = (int)(255.99f * ((float)y / (height - 1)));
-        buffer[workId].b = 0;
-        buffer[workId].a = 255;
+        buffer[workId] = RayColor();
     }
 }
 
-__global__ void SamplePixel(GPUPixel* buffer, int width, int height)
-{
-    RayColor(buffer, width, height);
-}
-
-CUDARenderer::CUDARenderer(const Film& f, const Camera& c, World* w, int r, int s) : film(f), camera(c), world(w), reflexes(r), samples(s)
+CUDARenderer::CUDARenderer(const Film& f, int r) : film(f), reflexes(r)
 {
 
 }
 
 CUDARenderer::~CUDARenderer()
 {
-    delete world;
+
 }
 
 void CUDARenderer::Render()
