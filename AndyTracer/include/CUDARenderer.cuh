@@ -19,6 +19,7 @@ public:
 
 private:
     Film* film;
+    Camera* cameraHost;
     Camera* cameraDevice;
     Shape* sceneShapesDevice;
     Scene* sceneDevice;

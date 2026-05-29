@@ -60,6 +60,7 @@ __global__ void SamplePixel(GPUPixel* buffer, int width, int height, Camera* cam
 
 CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* sc, int r) : film(f),reflexes(r)
 {
+    cameraHost = cam;
     //tamano con el que lanzaremos el kernel
     //16*16 = 256 hilos por bloque
     blockSize = { 16, 16 };
@@ -72,11 +73,8 @@ CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* sc, int r) : film(f),ref
 
     //puntero en memoria de gpu a la camara
     cameraDevice = nullptr;
-    cudaMallocManaged(&cameraDevice, sizeof(Camera));
-    cameraDevice->position = cam->position;
-    cameraDevice->delta_x = cam->delta_x;
-    cameraDevice->delta_y = cam->delta_y;
-    cameraDevice->position_top_left = cam->position_top_left;
+    cudaMalloc(&cameraDevice, sizeof(Camera));
+    cudaMemcpy(cameraDevice, cam, sizeof(Camera), cudaMemcpyHostToDevice);
 
     //puntero en gpu a la escena
     //puntero al array de shapes de la escena que pasamos
@@ -112,6 +110,7 @@ CUDARenderer::~CUDARenderer()
 
 void CUDARenderer::Render()
 {
+    cudaMemcpy(cameraDevice, cameraHost, sizeof(Camera), cudaMemcpyHostToDevice);
     //lanzamos el kernel
     SamplePixel <<<gridSize, blockSize >>>(pixelBufferDevice, film->GetTamX(), film->GetTamY(), cameraDevice, sceneDevice);
 

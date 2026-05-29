@@ -20,10 +20,7 @@ private:
 
     virtual void onKeyPressed(DisplayInterface& display, Key key) override;
 
-    virtual void onKeyUp(DisplayInterface& display, Key key) override
-    {
-        printf("onKeyUp: key=%s\n", getKeyString(key));
-    }
+    virtual void onKeyUp(DisplayInterface& display, Key key) override;
 
     virtual void onMouseButtonDown(DisplayInterface& display, Mouse mouse) override;
 

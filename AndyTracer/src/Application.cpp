@@ -5,6 +5,8 @@
 #include "Scene.h"
 #include "Light.h"
 #include "Shape.h"
+#include "glm/vec3.hpp"
+#include <glm/gtc/quaternion.hpp>
 
 Application::Application()
 {
@@ -14,8 +16,9 @@ Application::Application()
 
     camera = new Camera(
         Vector3(0, 0, 3),
-        Vector3(0, 0, 0),
+        Vector3(0, 0, 1),
         Vector3(0, 1, 0),
+        1.0f,
         film->GetTamX(),
         film->GetTamY(),
         60);
@@ -73,6 +76,31 @@ void Application::onKeyDown(DisplayInterface& display, Key key)
 void Application::onKeyPressed(DisplayInterface& display, Key key)
 {
     printf("onKeyPressed: key=%s\n", getKeyString(key));
+
+    Vector3 movement(0);
+    float movementSpeed = 0.1f;
+    switch (key)
+    {
+    case Key::W:
+        movement = Vector3(0, 0, -1);
+        break;
+    case Key::S:
+        movement = Vector3(0, 0, 1);
+        break;
+    case Key::A:
+        movement = Vector3(-1, 0, 0);
+        break;
+    case Key::D:
+        movement = Vector3(1, 0, 0);
+        break;
+    }
+
+    camera->MoveCamera(camera->position + movement * movementSpeed, camera->forward, camera->up);
+}
+
+void Application::onKeyUp(DisplayInterface& display, Key key)
+{
+    printf("onKeyUp: key=%s\n", getKeyString(key));
 }
 
 void Application::onMouseButtonDown(DisplayInterface& display, Mouse mouse)
