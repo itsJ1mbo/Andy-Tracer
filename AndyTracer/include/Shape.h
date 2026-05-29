@@ -71,16 +71,29 @@ struct Shape
 
     __device__ bool QuadIntersect(Ray ray, float tMin, float tMax, ShapeIntersection& info)
     {
-        auto denom = dot(quadData.normal, ray.direction);
+        float denom = dot(quadData.normal, ray.direction);
 
         // No hit if the ray is parallel to the plane.
-        if (std::fabs(denom) < 1e-8)
+        if (fabsf(denom) < 1e-8)
             return false;
 
         // Return false if the hit point parameter t is outside the ray interval.
-        auto t = (dot(quadData.normal, position) - dot(quadData.normal, ray.origin)) / denom;
+        float t = (dot(quadData.normal, position) - dot(quadData.normal, ray.origin)) / denom;
         if (t <= tMin || t >= tMax)
             return false;
+
+        auto intersection = ray.At(t);
+        // Esto sale en el libro pero no parece que cambie nada
+        Vector3 planar_hitpt_vector = intersection - position;
+        auto w = quadData.normal / dot(quadData.normal, quadData.normal);
+        auto alpha = dot(w, cross(planar_hitpt_vector, quadData.height));
+        auto beta = dot(w, cross(quadData.width, planar_hitpt_vector));
+        if ((alpha <= 0 && alpha >= 1) || (beta <= 0 && beta >= 1))
+            return false;
+
+        info.position = intersection;
+        info.normal = quadData.normal;
+
 
         return true;
     }
