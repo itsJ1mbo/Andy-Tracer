@@ -1,7 +1,9 @@
 #include "CUDARenderer.cuh"
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include "Ray.h"
 #include <cstdio>
+
 
 __device__ GPUPixel RayColor(Ray ray)
 {
@@ -35,6 +37,7 @@ CUDARenderer::CUDARenderer(const Film& f, const Camera& cam, int r) : film(f),re
     pixelBuffer = nullptr;
     cudaMallocManaged(&pixelBuffer, film.GetTamX() * film.GetTamY() * sizeof(GPUPixel));
 
+    //puntero en memoria de gpu a la camara
     camera = nullptr;
     cudaMallocManaged(&camera, sizeof(Camera));
     camera->position = cam.position;

@@ -11,9 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\Camera.h" />
     <ClInclude Include="..\include\CUDARenderer.cuh" />
     <ClInclude Include="..\include\defs.h" />
     <ClInclude Include="..\include\Film.h" />
+    <ClInclude Include="..\include\Ray.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\Film.cpp" />

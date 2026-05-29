@@ -1,5 +1,6 @@
-#include "Film.h"
 #include "defs.h"
+#include "Film.h"
+#include "Camera.h"
 #include "CUDARenderer.cuh"
 
 int main(void) {
@@ -12,9 +13,7 @@ int main(void) {
         Vector3(0, 1, 0),
         film.GetTamX(),
         film.GetTamY(),
-        60,
-        0.6,
-        10);
+        60);
 
     CUDARenderer* renderer = new CUDARenderer(film, camera, 0);
 

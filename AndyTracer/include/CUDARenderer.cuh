@@ -1,5 +1,6 @@
 #pragma once
 #include "defs.h"
+#include "Camera.h"
 #include "Film.h"
 
 class World;
@@ -17,7 +18,7 @@ public:
 private:
     Film film;
     Camera* camera;
-    int reflexes;
+    int reflexes; 
 
     GPUPixel* pixelBuffer;
 
