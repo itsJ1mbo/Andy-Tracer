@@ -9,6 +9,7 @@ class Film
 {
 public:
     Film(int x, int y);
+    ~Film();
 
     int GetTamX() const { return tamX; }
     int GetTamY() const { return tamY; }
@@ -17,6 +18,8 @@ public:
     void Display();
 
     void CopyBuffer(GPUPixel* buffer);
+
+    PixelToaster::Display* GetWindow() { return &window; }
 
 private:
     int tamX;

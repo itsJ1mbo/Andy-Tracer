@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\Application.h" />
     <ClInclude Include="..\include\Camera.h" />
     <ClInclude Include="..\include\CUDARenderer.cuh" />
     <ClInclude Include="..\include\defs.h" />
@@ -23,6 +24,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\Film.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\Application.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="..\src\CUDARenderer.cu">

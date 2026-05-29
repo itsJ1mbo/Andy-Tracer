@@ -1,7 +1,6 @@
 #pragma once
 #include "Shape.h"
-
-struct Light;
+#include "Light.h"
 
 struct Scene : Shape
 {

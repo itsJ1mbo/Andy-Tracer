@@ -1,8 +1,8 @@
 #pragma once
 #include "defs.h"
-#include "Camera.h"
-#include "Film.h"
 
+struct Film;
+struct Camera;
 struct Shape;
 struct Scene;
 struct Light;
@@ -11,14 +11,14 @@ struct ShapeIntersection;
 class CUDARenderer
 {
 public:
-    CUDARenderer(const Film& f, const Camera& cam, Scene* sc, int r);
+    CUDARenderer(Film* f, Camera* cam, Scene* sc, int r);
 
     ~CUDARenderer();
 
     void Render();
 
 private:
-    Film film;
+    Film* film;
     Camera* cameraDevice;
     Shape* sceneShapesDevice;
     Scene* sceneDevice;

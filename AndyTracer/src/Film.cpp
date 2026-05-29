@@ -6,6 +6,12 @@ Film::Film(int x, int y) : tamX(x), tamY(y), aspectRatio(1.0f * tamX / tamY), wi
     pixels = new PixelToaster::TrueColorPixel[tamX*tamY];
 }
 
+Film::~Film()
+{
+    delete[] pixels;
+    pixels = nullptr;
+}
+
 void Film::Display()
 {
     window.update(pixels);
