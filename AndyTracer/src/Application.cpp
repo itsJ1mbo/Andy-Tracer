@@ -16,7 +16,7 @@ Application::Application()
 
     camera = new Camera(
         Vector3(0, 0, 3),
-        Vector3(0, 0, 1),
+        Vector3(0, 0, -1),
         Vector3(0, 1, 0),
         1.0f,
         film->GetTamX(),
@@ -50,6 +50,7 @@ Application::Application()
     escena.lights = lights.data();
     escena.lightCount = (int)lights.size();
 
+    //creamos renderer
     renderer = new CUDARenderer(film, camera, &escena, 0);
 }
 
@@ -77,25 +78,52 @@ void Application::onKeyPressed(DisplayInterface& display, Key key)
 {
     printf("onKeyPressed: key=%s\n", getKeyString(key));
 
-    Vector3 movement(0);
+    Vector3 movementDir(0);
+    float degrees = 0.0f;
     float movementSpeed = 0.1f;
+    float rotationSpeed = 2.0f;
+
+    //calculamos el vector right para movernos a los laterales
+    Vector3 right = cross(camera->up, camera->forward);
+
     switch (key)
     {
     case Key::W:
-        movement = Vector3(0, 0, -1);
+        movementDir = -camera->forward;
         break;
     case Key::S:
-        movement = Vector3(0, 0, 1);
+        movementDir = camera->forward;
         break;
     case Key::A:
-        movement = Vector3(-1, 0, 0);
+        movementDir = -right;
         break;
     case Key::D:
-        movement = Vector3(1, 0, 0);
+        movementDir = right;
+        break;
+    case Key::Left:
+        degrees = rotationSpeed;
+        break;
+    case Key::Right:
+        degrees = -rotationSpeed;
         break;
     }
 
-    camera->MoveCamera(camera->position + movement * movementSpeed, camera->forward, camera->up);
+    Vector3 newPos = camera->position + (movementDir * movementSpeed);
+
+    Vector3 newForward = camera->forward;
+    if (degrees != 0.0f)
+    {
+        glm::vec3 forwardOriginal(camera->forward.x, camera->forward.y, camera->forward.z);
+        glm::vec3 rotAxis(camera->up.x, camera->up.y, camera->up.z);
+
+        float rad = glm::radians(degrees);
+        glm::quat rotQuaternion = glm::angleAxis(rad, glm::normalize(rotAxis));
+
+        glm::vec3 forwardFinal = rotQuaternion * forwardOriginal;
+        newForward = Vector3(forwardFinal.x, forwardFinal.y, forwardFinal.z);
+    }
+
+    camera->MoveCamera(newPos, newForward, camera->up);
 }
 
 void Application::onKeyUp(DisplayInterface& display, Key key)

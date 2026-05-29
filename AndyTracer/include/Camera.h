@@ -26,7 +26,8 @@ struct Camera
     )
     {
         position = p;
-        forward = normalize(forw);
+        //este menos es necesario para que cuando creamos la camara y la escena todo siga el mismo convenio de ejes
+        forward = -normalize(forw);
         up = u;
         focal_length = fl;
         width = w;
@@ -68,6 +69,13 @@ struct Camera
             position - focal_length * forward
             + v * half_height_viewport + delta_x * 0.5f
             - right * half_width_viewport + delta_y * 0.5f;
+    }
+
+    __host__ void MoveCamera(Vector3 newPos)
+    {
+        position = newPos;
+
+        CalculateViewport();
     }
 
     __host__ void MoveCamera(Vector3 newPos, Vector3 newForward, Vector3 newUp)

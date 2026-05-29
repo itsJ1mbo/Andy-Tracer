@@ -20,15 +20,23 @@ public:
 private:
     Film* film;
     Camera* cameraHost;
+
+    //punteros a memoria de GPU
+    //camara
     Camera* cameraDevice;
+    //shapes de la escena
     Shape* sceneShapesDevice;
-    Scene* sceneDevice;
+    //luces de la escena
     Light* sceneLightsDevice;
-
-    int reflexes; 
-
+    //la escena en si
+    Scene* sceneDevice;
+    //buffer de pixeles de GPU
     GPUPixel* pixelBufferDevice;
 
+    //num reflejos
+    int reflexes;
+
+    //tamano con el que se inicializa el kernel
     dim3 blockSize;
     dim3 gridSize;
 };

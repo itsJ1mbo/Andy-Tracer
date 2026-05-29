@@ -14,7 +14,7 @@ __device__ GPUPixel Shade(Ray ray, Scene* scene, ShapeIntersection& info)
         if(scene->lights[i].projectsShadow)
         {
             Vector3 dir = scene->lights[i].GetShadowDir(info.position);
-            //no queria tener que pasar esto a traves de todo el kernel
+            //esta feo pero no queria tener que pasar esto a traves de todo el kernel
             float rayEpsilon = 0.01f;
             Ray shadowRay(info.position + dir * rayEpsilon, dir);
             ShapeIntersection shadowInfo;
@@ -43,16 +43,15 @@ __device__ GPUPixel RayColor(Ray ray, Scene* scene)
     return GPUPixel(0);
 }
 
-__global__ void SamplePixel(GPUPixel* buffer, int width, int height, Camera* cam, Scene* scene)
+__global__ void SamplePixel(GPUPixel* buffer, Camera* cam, Scene* scene)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-    //printf("Pixel: (%d, %d)\n", x, y);
 
-    if (x < width && y < height)
+    if (x < cam->width && y < cam->height)
     {
         //indice del pixel
-        int workId = y * width + x;
+        int workId = y * cam->width + x;
 
         buffer[workId] = RayColor(cam->GetRay(x, y), scene);
     }
@@ -67,7 +66,7 @@ CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* sc, int r) : film(f),ref
     gridSize = { (film->GetTamX() + blockSize.x - 1) / blockSize.x,
         (film->GetTamY() + blockSize.y - 1) / blockSize.y };
 
-    //reservamos espacio para el buffer de pixeles
+    //reservamos espacio en gpu para el buffer de pixeles
     pixelBufferDevice = nullptr;
     cudaMallocManaged(&pixelBufferDevice, film->GetTamX() * film->GetTamY() * sizeof(GPUPixel));
 
@@ -88,12 +87,14 @@ CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* sc, int r) : film(f),ref
     cudaMalloc(&sceneLightsDevice, lightsSize);
     cudaMemcpy(sceneLightsDevice, sc->lights, lightsSize, cudaMemcpyHostToDevice);
     //creamos una copia temporal de la escena pero con el array de shapes y de luces de la gpu (que acabamos de copiar)
+    //(necesario para el siguiente paso)
     Scene tempScene;
     tempScene.shapes = sceneShapesDevice;
     tempScene.shapeCount = sc->shapeCount;
     tempScene.lights = sceneLightsDevice;
     tempScene.lightCount = sc->lightCount;
-    //copiamos la escena temporal a la escena de gpu
+    //copiamos la escena temporal a la escena de gpu (si copiasemos la escena que pasamos entonces copiariamos los arrays
+    //que contiene la escena de cpu al puntero de la escena de gpu, que es algo que crashearia el kernel)
     sceneDevice = nullptr;
     cudaMalloc(&sceneDevice, sizeof(Scene));
     cudaMemcpy(sceneDevice, &tempScene, sizeof(Scene), cudaMemcpyHostToDevice);
@@ -101,6 +102,7 @@ CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* sc, int r) : film(f),ref
 
 CUDARenderer::~CUDARenderer()
 {
+    //liberamos el espacio en gpu usado
     cudaFree(pixelBufferDevice);
     cudaFree(cameraDevice);
     cudaFree(sceneShapesDevice);
@@ -110,16 +112,19 @@ CUDARenderer::~CUDARenderer()
 
 void CUDARenderer::Render()
 {
+    //actualizamos la posicion de la camara de la cpu a la gpu
     cudaMemcpy(cameraDevice, cameraHost, sizeof(Camera), cudaMemcpyHostToDevice);
     //lanzamos el kernel
-    SamplePixel <<<gridSize, blockSize >>>(pixelBufferDevice, film->GetTamX(), film->GetTamY(), cameraDevice, sceneDevice);
+    SamplePixel <<<gridSize, blockSize >>>(pixelBufferDevice, cameraDevice, sceneDevice);
 
+    //por si sale algun error
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         printf("CUDA Launch Error: %s\n", cudaGetErrorString(err));
         return;
     }
 
+    //esperamos a que acaben todos los hilos
     err = cudaDeviceSynchronize();
     if (err != cudaSuccess) {
         printf("CUDA Sync Error: %s\n", cudaGetErrorString(err));
