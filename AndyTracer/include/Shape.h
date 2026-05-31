@@ -2,7 +2,7 @@
 #include "defs.h"
 #include "Ray.h"
 
-enum ShapeType { Sphere, Quad };
+enum class ShapeType { Sphere, Quad };
 
 struct SphereData
 {
@@ -30,20 +30,23 @@ struct Shape
 
     __host__ Shape() {}
 
-    __device__ bool Intersect(Ray r, float tMin, float tMax, ShapeIntersection& info)
+    __device__ bool Intersect(const Ray& r, float tMin, float tMax, ShapeIntersection& info) const
     {
         switch (type)
         {
-            case Sphere:
+            case ShapeType::Sphere:
                 return SphereIntersect(r, tMin, tMax, info);
                 break;
-            case Quad:
+            case ShapeType::Quad:
                 return QuadIntersect(r, tMin, tMax, info);
+                break;
+            default:
+                return false;
                 break;
         }
     }
 
-    __device__ bool SphereIntersect(Ray ray, float tMin, float tMax, ShapeIntersection& info)
+    __device__ bool SphereIntersect(const Ray& ray, float tMin, float tMax, ShapeIntersection& info) const
     {
         Vector3 oc = position - ray.origin;
         auto a = dot(ray.direction, ray.direction);
@@ -72,7 +75,7 @@ struct Shape
         return true;
     }
 
-    __device__ bool QuadIntersect(Ray ray, float tMin, float tMax, ShapeIntersection& info)
+    __device__ bool QuadIntersect(const Ray& ray, float tMin, float tMax, ShapeIntersection& info) const
     {
         float denom = dot(quadData.normal, ray.direction);
 
@@ -107,26 +110,26 @@ struct Shape
     }
 };
 
-__host__ inline Shape CreateSphere(Vector3 p, float r, Material m)
+__host__ inline Shape CreateSphere(const Vector3& p, float r, const Material& m)
 {
     Shape sh;
     sh.position = p;
     sh.mat = m;
 
-    sh.type = Sphere;
+    sh.type = ShapeType::Sphere;
 
     sh.sphereData.radius = r;
 
     return sh;
 }
 
-__host__ inline Shape CreateQuad(Vector3 p, Vector3 w, Vector3 h, Material m)
+__host__ inline Shape CreateQuad(const Vector3& p, const Vector3& w, const Vector3& h, const Material& m)
 {
     Shape sh;
     sh.position = p;
-    sh.mat = m;
+    sh.mat = m; 
 
-    sh.type = Quad;
+    sh.type = ShapeType::Quad; 
 
     sh.quadData.width = w;
     sh.quadData.height = h;

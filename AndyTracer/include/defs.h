@@ -2,7 +2,7 @@
 #include "cuda_runtime.h"
 #include "cmath"
 
-const float PI = 3.14159265359;
+constexpr float PI = 3.14159265359;
 
 using integer8 = unsigned char;
 
@@ -67,6 +67,13 @@ __host__ __device__ inline Vector3 operator*(const Vector3& v, float t) {
 
 __host__ __device__ inline Vector3 operator*(const Vector3& u, const Vector3& v) {
     return Vector3(u.x * v.x, u.y * v.y, u.z * v.z);
+}
+
+__host__ __device__ inline Vector3 operator*=(Vector3& v, float t) {
+	v.x *= t;
+	v.y *= t;
+	v.z *= t;
+	return v;
 }
 
 __host__ __device__ inline Vector3 operator/(const Vector3& v, float t) {

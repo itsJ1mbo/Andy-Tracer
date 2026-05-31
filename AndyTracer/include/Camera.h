@@ -36,7 +36,7 @@ struct Camera
         CalculateViewport();
     }
 
-    __device__ inline Ray GetRay(float x, float y)
+    __device__ inline Ray GetRay(float x, float y) const
     {
         const Vector3 sample =
             position_top_left + delta_x * x + delta_y * y;
@@ -71,14 +71,14 @@ struct Camera
             - right * half_width_viewport + delta_y * 0.5f;
     }
 
-    __host__ void MoveCamera(Vector3 newPos)
+    __host__ void MoveCamera(const Vector3& newPos)
     {
         position = newPos;
 
         CalculateViewport();
     }
 
-    __host__ void MoveCamera(Vector3 newPos, Vector3 newForward, Vector3 newUp)
+    __host__ void MoveCamera(const Vector3& newPos, const Vector3& newForward, const Vector3& newUp)
     {
         position = newPos;
         forward = newForward;

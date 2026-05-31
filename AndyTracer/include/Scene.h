@@ -12,7 +12,7 @@ struct Scene : Shape
 
     __host__ Scene() : shapeCount(0), shapes(nullptr), lightCount(0), lights(nullptr) {}
 
-    __device__ bool Intersect(Ray& ray, float tMin, float tMax, ShapeIntersection& info)
+    __device__ bool Intersect(const Ray& ray, float tMin, float tMax, ShapeIntersection& info) const
     {
         for(int i = 0; i < shapeCount; i++)
         {

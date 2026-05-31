@@ -30,7 +30,7 @@ struct Light
 
     __host__ Light() : type(Directional), projectsShadow(false), lightColor(GPUPixel(255)), vec3LightColor(1.0f){}
 
-    __device__ Vector3 Shade(Ray ray, ShapeIntersection& info)
+    __device__ Vector3 Shade(const Ray& ray, ShapeIntersection& info)
     {
         switch (type)
         {
@@ -43,7 +43,7 @@ struct Light
         }
     }
 
-    __device__ Vector3 DirectionalShade(Ray ray, ShapeIntersection& info)
+    __device__ Vector3 DirectionalShade(const Ray& ray, const ShapeIntersection& info) const
     {
         float intensity = fmaxf(0.0f, dot(info.normal, directionalData.direction));
         Vector3 diffuseColor = intensity * vec3LightColor;
@@ -67,7 +67,7 @@ struct Light
         return Vector3(fminf(1.0f, finalColor.x), fminf(1.0f, finalColor.y), fminf(1.0f, finalColor.z));
     }
 
-    __device__ Vector3 PointShade(Ray ray, ShapeIntersection& info)
+    __device__ Vector3 PointShade(const Ray& ray, const ShapeIntersection& info) const
     {
         Vector3 dir = normalize(info.position - pointData.position);
 
@@ -95,7 +95,7 @@ struct Light
         return Vector3(fminf(1.0f, finalColor.x), fminf(1.0f, finalColor.y), fminf(1.0f, finalColor.z));
     }
 
-    __device__ Vector3 GetShadowDir(Vector3 p)
+    __device__ Vector3 GetShadowDir(const Vector3& p)
     {
         if(type == Point)
         {
@@ -104,7 +104,7 @@ struct Light
     }
 };
 
-__host__ inline Light CreateDirectionalLight(Vector3 dir, GPUPixel c)
+__host__ inline Light CreateDirectionalLight(const Vector3& dir, const GPUPixel& c)
 {
     Light l;
 
@@ -117,7 +117,7 @@ __host__ inline Light CreateDirectionalLight(Vector3 dir, GPUPixel c)
     return l;
 }
 
-__host__ inline Light CreatePointLight(Vector3 p, GPUPixel c)
+__host__ inline Light CreatePointLight(const Vector3& p, const GPUPixel& c)
 {
     Light l;
 

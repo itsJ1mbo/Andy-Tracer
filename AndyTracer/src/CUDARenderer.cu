@@ -1,28 +1,28 @@
 #include "CUDARenderer.cuh"
 #include <cuda_runtime.h>
 #include "Camera.h"
+#include "config.h"
 #include "Scene.h"
 #include "Film.h"
 
-__device__ Vector3 RayColor(Ray ray, Scene* scene, int& reflexes);
+__device__ Vector3 RayColor(const Ray& ray, Scene* scene, int& reflexes);
 
 // No se puede usar la cabecera <random> en CUDA así que implementamos un generador pseudo-aleatorio muy simple
 // Asi evitamos enlazar cuRAND que para un aleatorio sencillo no merece la pena
 __device__ float GetRandomFloat(unsigned int& seed) {
     seed = 1664525 * seed + 1013904223;
-    return ((float)(seed & 0x00FFFFFF) / (float)0x01000000);
+    return (static_cast<float>(seed & 0x00FFFFFF) / static_cast<float>(0x01000000));
 }
 
-__device__ Vector3 Reflect(Ray ray, ShapeIntersection& info)
+__device__ Vector3 Reflect(const Ray& ray, const ShapeIntersection& info)
 {
     Vector3 I = normalize(ray.direction);
     return normalize(I - (2.0f * dot(I, info.normal)) * info.normal);
 }
 
-__device__ Vector3 Shade(Ray ray, Scene* scene, ShapeIntersection& info, int& reflexes)
+__device__ Vector3 Shade(const Ray& ray, Scene* scene, ShapeIntersection& info, int& reflexes)
 {
     Vector3 ret(0);
-    float rayEpsilon = 0.01f;
 
     for(int i = 0; i < scene->lightCount; i++)
     {
@@ -30,7 +30,7 @@ __device__ Vector3 Shade(Ray ray, Scene* scene, ShapeIntersection& info, int& re
         {
             Vector3 dir = scene->lights[i].GetShadowDir(info.position);
             //esta feo pero no queria tener que pasar esto a traves de todo el kernel
-            Ray shadowRay(info.position + dir * rayEpsilon, dir);
+            Ray shadowRay(info.position + dir * config::RAY_EPSILON, dir);
             ShapeIntersection shadowInfo;
             if(scene->Intersect(shadowRay, 0, INFINITY, shadowInfo))
             {
@@ -43,7 +43,7 @@ __device__ Vector3 Shade(Ray ray, Scene* scene, ShapeIntersection& info, int& re
     if (info.material.GetReflexFactor() > 0 && reflexes > 0) {
         reflexes--;
         auto dir = Reflect(ray, info);
-        Ray reflejo = Ray(info.position + dir * rayEpsilon, dir);
+        Ray reflejo = Ray(info.position + dir * config::RAY_EPSILON, dir);
         ret += info.material.GetReflexFactor() * RayColor(reflejo, scene, reflexes);
     }
 
@@ -51,7 +51,7 @@ __device__ Vector3 Shade(Ray ray, Scene* scene, ShapeIntersection& info, int& re
     return ret;
 }
 
-__device__ Vector3 RayColor(Ray ray, Scene* scene, int& reflexes)
+__device__ Vector3 RayColor(const Ray& ray, Scene* scene, int& reflexes)
 {
     ShapeIntersection closestInfo;
     bool hitAnything = false;
@@ -86,16 +86,16 @@ __global__ void SamplePixel(GPUPixel* buffer, Camera* cam, Scene* scene)
         //indice del pixel
         int workId = y * cam->width + x;
         // Multi-sampling
-        int samples = 10;
+        int samples = config::SAMPLES;
 
 		unsigned int seed = workId; // Semilla diferente para cada pixel
 
         for (int s = 0; s < samples; s++) {
             const Ray ray_primary = cam->GetRay(x + GetRandomFloat(seed), y + GetRandomFloat(seed));
-            int reflexes = 10;
+            int reflexes = config::MAX_REFLEXES;
             finalColor += RayColor(ray_primary, scene, reflexes);
         }
-        finalColor /= samples;
+        finalColor /= config::SAMPLES;
 
         // Se calcula en floats y vectores y solo se convierte a enteros (GPUPixel) al final para no perder precision
         finalColor.x = fminf(1.0f, finalColor.x);
@@ -111,7 +111,7 @@ __global__ void SamplePixel(GPUPixel* buffer, Camera* cam, Scene* scene)
     }
 }
 
-CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* sc, int r) : film(f),reflexes(r)
+CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* scene) : film(f)
 {
 	// Para que aguante la recursividad subimos el limite de pila
     cudaError_t limitErr = cudaDeviceSetLimit(cudaLimitStackSize, 8192);
@@ -137,22 +137,22 @@ CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* sc, int r) : film(f),ref
 
     //puntero en gpu a la escena
     //puntero al array de shapes de la escena que pasamos
-    size_t shapesSize = sizeof(Shape) * sc->shapeCount;
+    size_t shapesSize = sizeof(Shape) * scene->shapeCount;
     sceneShapesDevice = nullptr;
     cudaMalloc(&sceneShapesDevice, shapesSize);
-    cudaMemcpy(sceneShapesDevice, sc->shapes, shapesSize, cudaMemcpyHostToDevice);
+    cudaMemcpy(sceneShapesDevice, scene->shapes, shapesSize, cudaMemcpyHostToDevice);
     //puntero al array de luces de la escena
-    size_t lightsSize = sizeof(Light) * sc->lightCount;
+    size_t lightsSize = sizeof(Light) * scene->lightCount;
     sceneLightsDevice = nullptr;
     cudaMalloc(&sceneLightsDevice, lightsSize);
-    cudaMemcpy(sceneLightsDevice, sc->lights, lightsSize, cudaMemcpyHostToDevice);
+    cudaMemcpy(sceneLightsDevice, scene->lights, lightsSize, cudaMemcpyHostToDevice);
     //creamos una copia temporal de la escena pero con el array de shapes y de luces de la gpu (que acabamos de copiar)
     //(necesario para el siguiente paso)
     Scene tempScene;
     tempScene.shapes = sceneShapesDevice;
-    tempScene.shapeCount = sc->shapeCount;
+    tempScene.shapeCount = scene->shapeCount;
     tempScene.lights = sceneLightsDevice;
-    tempScene.lightCount = sc->lightCount;
+    tempScene.lightCount = scene->lightCount;
     //copiamos la escena temporal a la escena de gpu (si copiasemos la escena que pasamos entonces copiariamos los arrays
     //que contiene la escena de cpu al puntero de la escena de gpu, que es algo que crashearia el kernel)
     sceneDevice = nullptr;

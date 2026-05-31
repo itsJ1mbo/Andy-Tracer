@@ -11,7 +11,7 @@ struct ShapeIntersection;
 class CUDARenderer
 {
 public:
-    CUDARenderer(Film* f, Camera* cam, Scene* sc, int r);
+    CUDARenderer(Film* f, Camera* cam, Scene* scene);
 
     ~CUDARenderer();
 
@@ -33,12 +33,7 @@ private:
     //buffer de pixeles de GPU
     GPUPixel* pixelBufferDevice;
 
-    //num reflejos
-    int reflexes;
-
     //tamano con el que se inicializa el kernel
     dim3 blockSize;
     dim3 gridSize;
-
-    Vector3 Reflect(ShapeIntersection& info) const;
 };
