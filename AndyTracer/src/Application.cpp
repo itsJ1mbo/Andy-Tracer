@@ -57,7 +57,7 @@ Application::Application()
     escena.lightCount = (int)lights.size();
 
     //creamos renderer
-    renderer = new CUDARenderer(film, camera, &escena, 0);
+    renderer = new CUDARenderer(film, camera, &escena, 10);
 }
 
 void Application::run()
