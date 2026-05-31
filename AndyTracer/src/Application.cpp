@@ -23,15 +23,21 @@ Application::Application()
         film->GetTamY(),
         60);
 
+    // Materiales
+    Material rojo = Material(Vector3(1.0f, 0.0f, 0.0f), 0.5f);
+	Material verde = Material(Vector3(0.0f, 1.0f, 0.0f), 0.5f);
+	Material azul = Material(Vector3(0.0f, 0.0f, 1.0f), 0.5f);
+	Material amarillo = Material(Vector3(1.0f, 1.0f, 0.0f), 0.5f);
+
     //creamos las shapes
     std::vector<Shape> shapes;
-    Shape esfera = CreateSphere(Vector3(2, 0, -2), 1);
+    Shape esfera = CreateSphere(Vector3(2, 0, -2), 1, rojo);
     shapes.push_back(esfera);
-    Shape esfera2 = CreateSphere(Vector3(0, 0, -4), 1);
+    Shape esfera2 = CreateSphere(Vector3(0, 0, -4), 1, verde);
     shapes.push_back(esfera2);
-    Shape esfera3 = CreateSphere(Vector3(-2, 0, -6), 1);
+    Shape esfera3 = CreateSphere(Vector3(-2, 0, -6), 1, azul);
     shapes.push_back(esfera3);
-    Shape suelo = CreateQuad(Vector3(3, -1, 5), Vector3(-1, 0, 0), Vector3(0, 0, 1));
+    Shape suelo = CreateQuad(Vector3(50, -1, -50), Vector3(-100, 0, 0), Vector3(0, 0, 100), amarillo);
     shapes.push_back(suelo);
 
     //creamos las luces

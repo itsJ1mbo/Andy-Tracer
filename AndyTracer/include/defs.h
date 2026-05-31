@@ -46,6 +46,13 @@ __host__ __device__ inline Vector3 operator+(const Vector3& u, const Vector3& v)
     return Vector3(u.x + v.x, u.y + v.y, u.z + v.z);
 }
 
+__host__ __device__ inline Vector3 operator+=(Vector3& u, const Vector3& v) {
+	u.x += v.x;
+	u.y += v.y;
+	u.z += v.z;
+	return u;
+}
+
 __host__ __device__ inline Vector3 operator-(const Vector3& u, const Vector3& v) {
     return Vector3(u.x - v.x, u.y - v.y, u.z - v.z);
 }
@@ -64,6 +71,13 @@ __host__ __device__ inline Vector3 operator*(const Vector3& u, const Vector3& v)
 
 __host__ __device__ inline Vector3 operator/(const Vector3& v, float t) {
     return Vector3(v.x / t, v.y / t, v.z / t);
+}
+
+__host__ __device__ inline Vector3 operator/=(Vector3& v, float t) {
+    v.x /= t;
+    v.y /= t;
+    v.z /= t;
+    return v;
 }
 
 __host__ __device__ inline float dot(const Vector3& u, const Vector3& v) {
@@ -90,8 +104,23 @@ __host__ __device__ inline Vector3 normalize(const Vector3& v) {
     return v * (1.0f / len);
 }
 
+struct Material
+{
+    Vector3 color;
+    float reflexFactor;
+
+    __host__ __device__ float GetReflexFactor() const { return reflexFactor; }
+
+    __host__ __device__ Material() : color(1.0f), reflexFactor(0.0f) {}
+    __host__ __device__ Material(const Vector3 a, const float r)
+        : color(a), reflexFactor(r) {
+    }
+};
+
 struct ShapeIntersection
 {
     Vector3 position;
     Vector3 normal;
+	Material material;
+    float t;
 };

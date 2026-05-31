@@ -54,10 +54,15 @@ struct Light
         Vector3 r = 2 * dot(info.normal, directionalData.direction) * info.normal - directionalData.direction;
 
         float specular = fmaxf(0.0f, dot(view, r));
-        specular = powf(specular, 32.0f);
-        Vector3 specularColor = vec3LightColor * specular;
+        //specular = powf(specular, 32.0f);
+        float s2 = specular * specular;   // ^2
+        float s4 = s2 * s2;               // ^4
+        float s8 = s4 * s4;               // ^8
+        float s16 = s8 * s8;              // ^16
+        float specular32 = s16 * s16;     // ^32
+        Vector3 specularColor = vec3LightColor * specular32;
 
-        Vector3 finalColor = Vector3(1.0f, 1.0f, 1.0f) * diffuseColor + specularColor;
+        Vector3 finalColor = info.material.color * diffuseColor + specularColor;
 
         return Vector3(fminf(1.0f, finalColor.x), fminf(1.0f, finalColor.y), fminf(1.0f, finalColor.z));
     }
@@ -76,10 +81,16 @@ struct Light
         //ray = glm::reflect(-dir, info.normal);
 
         float specular = fmaxf(0.0f, dot(view, r));
-        specular = powf(specular, 32.0f);
-        Vector3 specularColor = vec3LightColor * specular;
+        //specular = powf(specular, 32.0f);
+        float s2 = specular * specular;   // ^2
+        float s4 = s2 * s2;               // ^4
+        float s8 = s4 * s4;               // ^8
+        float s16 = s8 * s8;              // ^16
+        float specular32 = s16 * s16;     // ^32
 
-        Vector3 finalColor = Vector3(1.0f, 1.0f, 1.0f) * diffuseColor + specularColor;
+        Vector3 specularColor = vec3LightColor * specular32;
+
+        Vector3 finalColor = info.material.color * diffuseColor + specularColor;
 
         return Vector3(fminf(1.0f, finalColor.x), fminf(1.0f, finalColor.y), fminf(1.0f, finalColor.z));
     }

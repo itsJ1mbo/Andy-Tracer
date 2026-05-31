@@ -20,6 +20,7 @@ struct Shape
 {
     ShapeType type;
     Vector3 position;
+    Material mat;
 
     union
     {
@@ -45,15 +46,15 @@ struct Shape
     __device__ bool SphereIntersect(Ray ray, float tMin, float tMax, ShapeIntersection& info)
     {
         Vector3 oc = position - ray.origin;
-        auto a = pow(length(ray.direction), 2);
+        auto a = dot(ray.direction, ray.direction);
         auto b = dot(ray.direction, oc);
-        auto c = pow(length(oc), 2) - sphereData.radius * sphereData.radius;
+        auto c = dot(oc, oc) - sphereData.radius * sphereData.radius;
         auto discriminant = b * b - a * c;
 
         if (discriminant < 0)
             return false;
 
-        auto sqrtd = std::sqrt(discriminant);
+        auto sqrtd = sqrtf(discriminant);
 
         // Find the nearest root that lies in the acceptable range.
         auto root = (b - sqrtd) / a;
@@ -65,6 +66,8 @@ struct Shape
 
         info.position = ray.At(root);
         info.normal = normalize((info.position - position));
+		info.material = mat;
+        info.t = root;
 
         return true;
     }
@@ -85,24 +88,30 @@ struct Shape
         auto intersection = ray.At(t);
         // Esto sale en el libro pero no parece que cambie nada
         Vector3 planar_hitpt_vector = intersection - position;
-        auto w = quadData.normal / dot(quadData.normal, quadData.normal);
+
+        Vector3 unnormalized_normal = cross(quadData.width, quadData.height);
+        Vector3 w = unnormalized_normal / dot(unnormalized_normal, unnormalized_normal);
+
         auto alpha = dot(w, cross(planar_hitpt_vector, quadData.height));
         auto beta = dot(w, cross(quadData.width, planar_hitpt_vector));
-        if ((alpha <= 0 && alpha >= 1) || (beta <= 0 && beta >= 1))
+        if (alpha < 0.0f || alpha > 1.0f || beta < 0.0f || beta > 1.0f)
             return false;
 
         info.position = intersection;
         info.normal = quadData.normal;
+		info.material = mat;
+		info.t = t;
 
 
         return true;
     }
 };
 
-__host__ inline Shape CreateSphere(Vector3 p, float r)
+__host__ inline Shape CreateSphere(Vector3 p, float r, Material m)
 {
     Shape sh;
     sh.position = p;
+    sh.mat = m;
 
     sh.type = Sphere;
 
@@ -111,10 +120,11 @@ __host__ inline Shape CreateSphere(Vector3 p, float r)
     return sh;
 }
 
-__host__ inline Shape CreateQuad(Vector3 p, Vector3 w, Vector3 h)
+__host__ inline Shape CreateQuad(Vector3 p, Vector3 w, Vector3 h, Material m)
 {
     Shape sh;
     sh.position = p;
+    sh.mat = m;
 
     sh.type = Quad;
 

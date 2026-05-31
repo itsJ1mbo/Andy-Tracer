@@ -39,12 +39,18 @@
     <ClInclude Include="..\include\Light.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\Application.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\Film.cpp">
       <Filter>Archivos de origen</Filter>
     </ClCompile>
     <ClCompile Include="..\src\main.cpp">
+      <Filter>Archivos de origen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Application.cpp">
       <Filter>Archivos de origen</Filter>
     </ClCompile>
   </ItemGroup>

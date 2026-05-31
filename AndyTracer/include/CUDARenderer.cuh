@@ -39,4 +39,6 @@ private:
     //tamano con el que se inicializa el kernel
     dim3 blockSize;
     dim3 gridSize;
+
+    Vector3 Reflect(ShapeIntersection& info) const;
 };

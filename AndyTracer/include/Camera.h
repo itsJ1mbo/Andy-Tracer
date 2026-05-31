@@ -36,10 +36,10 @@ struct Camera
         CalculateViewport();
     }
 
-    __device__ inline Ray GetRay(int x, int y)
+    __device__ inline Ray GetRay(float x, float y)
     {
         const Vector3 sample =
-            position_top_left + delta_x * (float)x + delta_y * (float)y;
+            position_top_left + delta_x * x + delta_y * y;
         const Vector3 displacement = (sample - position);
 
         return Ray{ position, normalize(displacement) };
