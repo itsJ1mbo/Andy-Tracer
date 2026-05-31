@@ -108,6 +108,42 @@ struct Shape
 
         return true;
     }
+
+    __device__ AABB GetAABB() const
+    {
+        AABB box;
+
+        if (type == ShapeType::Sphere)
+        {
+            box.bMin = position - Vector3(sphereData.radius);
+            box.bMax = position + Vector3(sphereData.radius);
+        }
+        else if (type == ShapeType::Quad)
+        {
+			// Las esquinas del cuadrado
+            Vector3 v0 = position;
+            Vector3 v1 = position + quadData.width;
+            Vector3 v2 = position + quadData.height;
+            Vector3 v3 = position + quadData.width + quadData.height;
+
+            // Punto minimo
+            box.bMin.x = fminf(fminf(v0.x, v1.x), fminf(v2.x, v3.x));
+            box.bMin.y = fminf(fminf(v0.y, v1.y), fminf(v2.y, v3.y));
+            box.bMin.z = fminf(fminf(v0.z, v1.z), fminf(v2.z, v3.z));
+
+            // Punto maximo
+            box.bMax.x = fmaxf(fmaxf(v0.x, v1.x), fmaxf(v2.x, v3.x));
+            box.bMax.y = fmaxf(fmaxf(v0.y, v1.y), fmaxf(v2.y, v3.y));
+            box.bMax.z = fmaxf(fmaxf(v0.z, v1.z), fmaxf(v2.z, v3.z));
+
+            float epsilon = 0.0001f;
+            if (fabsf(box.bMax.x - box.bMin.x) < epsilon) { box.bMin.x -= epsilon; box.bMax.x += epsilon; }
+            if (fabsf(box.bMax.y - box.bMin.y) < epsilon) { box.bMin.y -= epsilon; box.bMax.y += epsilon; }
+            if (fabsf(box.bMax.z - box.bMin.z) < epsilon) { box.bMin.z -= epsilon; box.bMax.z += epsilon; }
+        }
+        
+        return box;
+    }
 };
 
 __host__ inline Shape CreateSphere(const Vector3& p, float r, const Material& m)

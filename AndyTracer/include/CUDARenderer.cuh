@@ -7,6 +7,7 @@ struct Shape;
 struct Scene;
 struct Light;
 struct ShapeIntersection;
+struct BVHNode;
 
 class CUDARenderer
 {
@@ -26,6 +27,8 @@ private:
     Camera* cameraDevice;
     //shapes de la escena
     Shape* sceneShapesDevice;
+    // Nodos de la escena
+	BVHNode* sceneBVHDevice;
     //luces de la escena
     Light* sceneLightsDevice;
     //la escena en si

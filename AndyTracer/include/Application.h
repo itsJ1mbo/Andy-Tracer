@@ -1,5 +1,10 @@
 #pragma once
+#include <iosfwd>
+#include <vector>
 #include <PixelToaster/include/PixelToaster.h>
+
+#include "AABB.h"
+#include "Shape.h"
 
 struct Film;
 struct Camera;
@@ -15,6 +20,9 @@ public:
 
     void run();
     void free();
+
+    int BuildBVH(std::vector<Shape>& shapes, std::vector<BVHNode>& cpuBVHNodes, int start, int end);
+
 private:
     virtual void onKeyDown(DisplayInterface& display, Key key) override;
 

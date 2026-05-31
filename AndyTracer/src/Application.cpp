@@ -1,4 +1,8 @@
 #include "Application.h"
+
+#include <algorithm>
+#include <chrono>
+
 #include "Film.h"
 #include "Camera.h"
 #include "CUDARenderer.cuh"
@@ -25,20 +29,37 @@ Application::Application()
 
     // Materiales
     Material rojo = Material(Vector3(1.0f, 0.0f, 0.0f), 0.5f);
-	Material verde = Material(Vector3(0.0f, 1.0f, 0.0f), 0.5f);
-	Material azul = Material(Vector3(0.0f, 0.0f, 1.0f), 0.5f);
-	Material amarillo = Material(Vector3(1.0f, 1.0f, 0.0f), 0.5f);
+	Material verde = Material(Vector3(0.0f, 1.0f, 0.0f), 0.0f);
+	Material azul = Material(Vector3(0.0f, 0.0f, 1.0f), 0.25f);
+	Material amarillo = Material(Vector3(1.0f, 1.0f, 0.0f), 0.75f);
 
     //creamos las shapes
     std::vector<Shape> shapes;
-    Shape esfera = CreateSphere(Vector3(2, 0, -2), 1, rojo);
-    shapes.push_back(esfera);
-    Shape esfera2 = CreateSphere(Vector3(0, 0, -4), 1, verde);
-    shapes.push_back(esfera2);
-    Shape esfera3 = CreateSphere(Vector3(-2, 0, -6), 1, azul);
-    shapes.push_back(esfera3);
+
+    srand(static_cast<unsigned int>(time(nullptr)));
+    Material materiales[] = { rojo, verde, azul };
+    const int NUM_ESFERAS = 500;
+    // Generacion masiva de esferas de forma aleatoria para poner a prueba el BVH
+    for (int i = 0; i < NUM_ESFERAS; ++i)
+    {
+        float x = -20.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 40.0f);
+        float y = 0.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 8.0f);
+        float z = -5.0f - static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 40.0f);
+        float radio = 0.1f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 0.5f);
+
+        Material mat = materiales[rand() % 3];
+
+        Shape esfera = CreateSphere(Vector3(x, y, z), radio, mat);
+        shapes.push_back(esfera);
+    }
+
     Shape suelo = CreateQuad(Vector3(50, -1, -50), Vector3(-100, 0, 0), Vector3(0, 0, 100), amarillo);
     shapes.push_back(suelo);
+
+    // Nodos
+    std::vector<BVHNode> cpuBVHNodes;
+
+    BuildBVH(shapes, cpuBVHNodes, 0, shapes.size());
 
     //creamos las luces
     std::vector<Light> lights;
@@ -55,6 +76,8 @@ Application::Application()
     escena.shapeCount = (int)shapes.size();
     escena.lights = lights.data();
     escena.lightCount = (int)lights.size();
+	escena.bvhNodes = cpuBVHNodes.data();
+	escena.nodesCount = (int)cpuBVHNodes.size();
 
     //creamos renderer
     renderer = new CUDARenderer(film, camera, &escena);
@@ -62,9 +85,33 @@ Application::Application()
 
 void Application::run()
 {
-    while(film->GetWindow()->open())
+	// Cosas de fps que he hecho para comprobar la mejora del BVH
+    auto lastTime = std::chrono::high_resolution_clock::now();
+    double timeAccumulator = 0.0;
+    int frameCount = 0;
+
+    // Bucle
+    while (film->GetWindow()->open())
     {
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+        timeAccumulator += deltaTime.count();
+        frameCount++;
+
         renderer->Render();
+
+        if (timeAccumulator >= 1.0)
+        {
+            double fps = frameCount / timeAccumulator;
+            double msPerFrame = (timeAccumulator / frameCount) * 1000.0;
+
+            printf("FPS: %.2f | Frame Time: %.2f ms\n", fps, msPerFrame);
+
+            frameCount = 0;
+            timeAccumulator = 0.0;
+        }
     }
 }
 
@@ -73,6 +120,51 @@ void Application::free()
     delete film;
     delete camera;
     delete renderer;
+}
+
+int Application::BuildBVH(std::vector<Shape>& shapes, std::vector<BVHNode>& cpuBVHNodes, int start, int end)
+{
+    int nodeIdx = static_cast<int>(cpuBVHNodes.size());
+    cpuBVHNodes.emplace_back();
+
+	// AABB que envuelve a todas los objetos del nodo
+    AABB box = shapes[start].GetAABB();
+    for (int i = start + 1; i < end; i++) 
+    {
+        box = AABB::SurroundingBox(box, shapes[i].GetAABB());
+    }
+    cpuBVHNodes[nodeIdx].bounds = box;
+
+    int count = end - start;
+    if (count <= 2) 
+    {
+        // Si el nodo es hoja
+        cpuBVHNodes[nodeIdx].isLeaf = true;
+        cpuBVHNodes[nodeIdx].firstShape = start;
+        cpuBVHNodes[nodeIdx].rightChild = count; 
+    }
+    else 
+    {
+        // Si es rama dividimos en dos
+        cpuBVHNodes[nodeIdx].isLeaf = false;
+        int mid = start + count / 2; // Punto medio
+
+        // Elegimos un eje para cortar por la mitad
+        // Para mas optimizacion se podria elegir un eje concreto en base a X pero me da pereza y pa esto asi vale
+        int axis = rand() % 3;
+
+        std::sort(shapes.begin() + start, shapes.begin() + end, [axis](const Shape& a, const Shape& b) {
+            float centerA = (axis == 0) ? a.position.x : (axis == 1 ? a.position.y : a.position.z);
+            float centerB = (axis == 0) ? b.position.x : (axis == 1 ? b.position.y : b.position.z);
+            return centerA < centerB;
+        });
+
+        // Construimos los hijos recursivamente
+        cpuBVHNodes[nodeIdx].leftChild = BuildBVH(shapes, cpuBVHNodes, start, mid);
+        cpuBVHNodes[nodeIdx].rightChild = BuildBVH(shapes, cpuBVHNodes, mid, end);
+    }
+
+    return nodeIdx;
 }
 
 void Application::onKeyDown(DisplayInterface& display, Key key)

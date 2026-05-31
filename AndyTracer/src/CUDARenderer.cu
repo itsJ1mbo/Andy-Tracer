@@ -4,8 +4,9 @@
 #include "config.h"
 #include "Scene.h"
 #include "Film.h"
+#include "AABB.h"
 
-__device__ Vector3 RayColor(const Ray& ray, Scene* scene, int& reflexes);
+__device__ Vector3 RayColor(const Ray& ray, Scene* scene);
 
 // No se puede usar la cabecera <random> en CUDA así que implementamos un generador pseudo-aleatorio muy simple
 // Asi evitamos enlazar cuRAND que para un aleatorio sencillo no merece la pena
@@ -20,7 +21,7 @@ __device__ Vector3 Reflect(const Ray& ray, const ShapeIntersection& info)
     return normalize(I - (2.0f * dot(I, info.normal)) * info.normal);
 }
 
-__device__ Vector3 Shade(const Ray& ray, Scene* scene, ShapeIntersection& info, int& reflexes)
+__device__ Vector3 Shade(const Ray& ray, Scene* scene, ShapeIntersection& info)
 {
     Vector3 ret(0);
 
@@ -32,47 +33,49 @@ __device__ Vector3 Shade(const Ray& ray, Scene* scene, ShapeIntersection& info, 
             //esta feo pero no queria tener que pasar esto a traves de todo el kernel
             Ray shadowRay(info.position + dir * config::RAY_EPSILON, dir);
             ShapeIntersection shadowInfo;
-            if(scene->Intersect(shadowRay, 0, INFINITY, shadowInfo))
+            if (scene->IntersectBVH(shadowRay, 0.0f, INFINITY, shadowInfo))
             {
-                continue;
+                continue; 
             }
         }
         ret = ret + scene->lights[i].Shade(ray, info);
-    }
-
-    if (info.material.GetReflexFactor() > 0 && reflexes > 0) {
-        reflexes--;
-        auto dir = Reflect(ray, info);
-        Ray reflejo = Ray(info.position + dir * config::RAY_EPSILON, dir);
-        ret += info.material.GetReflexFactor() * RayColor(reflejo, scene, reflexes);
     }
 
     ret = Vector3(fminf(1.0f, ret.x), fminf(1.0f, ret.y), fminf(1.0f, ret.z));
     return ret;
 }
 
-__device__ Vector3 RayColor(const Ray& ray, Scene* scene, int& reflexes)
+__device__ Vector3 RayColor(const Ray& ray, Scene* scene)
 {
-    ShapeIntersection closestInfo;
-    bool hitAnything = false;
-    float closestT = INFINITY;
+    Vector3 finalColor(0, 0, 0);
+    Vector3 rayEnergy(1.0f, 1.0f, 1.0f);
+    Ray currentRay = ray;
 
-    for(int i = 0; i < scene->shapeCount; i++)
+    for (int r = 0; r <= config::MAX_REFLEXES; r++)
     {
-        ShapeIntersection info;
-        if(scene->shapes[i].Intersect(ray, 0, closestT, info))
+        ShapeIntersection closestInfo;
+
+        if (!scene->IntersectBVH(currentRay, 0.0f, INFINITY, closestInfo))
         {
-            closestT = info.t;
-            closestInfo = info;
-            hitAnything = true;
+            break;
         }
+
+		// Color con luz y reflexion iterativo para que la GPU no llore
+        Vector3 light = Shade(currentRay, scene, closestInfo);
+        finalColor = finalColor + rayEnergy * light;
+
+        float reflexFactor = closestInfo.material.GetReflexFactor();
+        if (reflexFactor <= 0.0f)
+        {
+            break;
+        }
+
+        rayEnergy *= reflexFactor;
+        Vector3 reflectDir = Reflect(currentRay, closestInfo);
+        currentRay = Ray(closestInfo.position + reflectDir * config::RAY_EPSILON, reflectDir);
     }
 
-    if (hitAnything) {
-        return Shade(ray, scene, closestInfo, reflexes);
-    }
-
-    return Vector3(0, 0, 0);
+    return finalColor;
 }
 
 __global__ void SamplePixel(GPUPixel* buffer, Camera* cam, Scene* scene)
@@ -92,8 +95,7 @@ __global__ void SamplePixel(GPUPixel* buffer, Camera* cam, Scene* scene)
 
         for (int s = 0; s < samples; s++) {
             const Ray ray_primary = cam->GetRay(x + GetRandomFloat(seed), y + GetRandomFloat(seed));
-            int reflexes = config::MAX_REFLEXES;
-            finalColor += RayColor(ray_primary, scene, reflexes);
+            finalColor += RayColor(ray_primary, scene);
         }
         finalColor /= config::SAMPLES;
 
@@ -113,12 +115,6 @@ __global__ void SamplePixel(GPUPixel* buffer, Camera* cam, Scene* scene)
 
 CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* scene) : film(f)
 {
-	// Para que aguante la recursividad subimos el limite de pila
-    cudaError_t limitErr = cudaDeviceSetLimit(cudaLimitStackSize, 8192);
-    if (limitErr != cudaSuccess) {
-        printf("Error subiendo el limite de pila: %s\n", cudaGetErrorString(limitErr));
-    }
-
     cameraHost = cam;
     //tamano con el que lanzaremos el kernel
     //16*16 = 256 hilos por bloque
@@ -141,6 +137,11 @@ CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* scene) : film(f)
     sceneShapesDevice = nullptr;
     cudaMalloc(&sceneShapesDevice, shapesSize);
     cudaMemcpy(sceneShapesDevice, scene->shapes, shapesSize, cudaMemcpyHostToDevice);
+	// Puntero al array de nodos del BVH de la escena que pasamos
+	size_t nodesSize = sizeof(BVHNode) * scene->nodesCount;
+    sceneBVHDevice = nullptr;
+    cudaMalloc(&sceneBVHDevice, nodesSize);
+    cudaMemcpy(sceneBVHDevice, scene->bvhNodes, nodesSize, cudaMemcpyHostToDevice);
     //puntero al array de luces de la escena
     size_t lightsSize = sizeof(Light) * scene->lightCount;
     sceneLightsDevice = nullptr;
@@ -153,6 +154,8 @@ CUDARenderer::CUDARenderer(Film* f, Camera* cam, Scene* scene) : film(f)
     tempScene.shapeCount = scene->shapeCount;
     tempScene.lights = sceneLightsDevice;
     tempScene.lightCount = scene->lightCount;
+    tempScene.bvhNodes = sceneBVHDevice;
+    tempScene.nodesCount = scene->nodesCount;
     //copiamos la escena temporal a la escena de gpu (si copiasemos la escena que pasamos entonces copiariamos los arrays
     //que contiene la escena de cpu al puntero de la escena de gpu, que es algo que crashearia el kernel)
     sceneDevice = nullptr;
@@ -165,6 +168,7 @@ CUDARenderer::~CUDARenderer()
     //liberamos el espacio en gpu usado
     cudaFree(pixelBufferDevice);
     cudaFree(cameraDevice);
+    cudaFree(sceneBVHDevice);
     cudaFree(sceneShapesDevice);
     cudaFree(sceneLightsDevice);
     cudaFree(sceneDevice);

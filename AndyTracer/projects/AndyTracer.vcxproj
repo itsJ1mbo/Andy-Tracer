@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\AABB.h" />
     <ClInclude Include="..\include\Application.h" />
     <ClInclude Include="..\include\Camera.h" />
     <ClInclude Include="..\include\config.h" />
