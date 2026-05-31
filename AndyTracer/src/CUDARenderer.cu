@@ -75,7 +75,7 @@ __device__ Vector3 RayColor(const Ray& ray, Scene* scene, int& reflexes)
     return Vector3(0, 0, 0);
 }
 
-__global__ void SamplePixel(GPUPixel* buffer, Camera* cam, Scene* scene)
+__global__ void SamplePixel(GPUPixel* buffer, Camera* cam, Scene* scene, int reflexNum)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -175,7 +175,7 @@ void CUDARenderer::Render()
     //actualizamos la posicion de la camara de la cpu a la gpu
     cudaMemcpy(cameraDevice, cameraHost, sizeof(Camera), cudaMemcpyHostToDevice);
     //lanzamos el kernel
-    SamplePixel <<<gridSize, blockSize >>>(pixelBufferDevice, cameraDevice, sceneDevice);
+    SamplePixel <<<gridSize, blockSize >>>(pixelBufferDevice, cameraDevice, sceneDevice, reflexes);
 
     //por si sale algun error
     cudaError_t err = cudaGetLastError();

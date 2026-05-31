@@ -20,5 +20,5 @@ void Film::Display()
 void Film::CopyBuffer(GPUPixel* buffer)
 {
     size_t totalBytes = tamX * tamY * sizeof(GPUPixel);
-    memcpy(pixels, buffer, totalBytes);
+    cudaMemcpy(pixels, buffer, totalBytes, cudaMemcpyDeviceToHost);
 }
