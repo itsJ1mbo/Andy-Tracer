@@ -40,7 +40,7 @@ Application::Application()
 
     srand(static_cast<unsigned int>(time(nullptr)));
     Material materiales[] = { rojo, verde, azul };
-    const int NUM_ESFERAS = 500;
+    const int NUM_ESFERAS = 250;
     // Generacion masiva de esferas de forma aleatoria para poner a prueba el BVH
     for (int i = 0; i < NUM_ESFERAS; ++i)
     {

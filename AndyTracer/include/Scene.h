@@ -18,12 +18,21 @@ struct Scene : Shape
 
     __device__ bool Intersect(const Ray& ray, float tMin, float tMax, ShapeIntersection& info) const
     {
-        for(int i = 0; i < shapeCount; i++)
+        bool hitAnything = false;
+        float closestT = tMax;
+
+        for (int i = 0; i < shapeCount; i++)
         {
-            if (shapes[i].Intersect(ray, tMin, tMax, info))
-                return true;
+            ShapeIntersection tempInfo;
+            if (shapes[i].Intersect(ray, tMin, closestT, tempInfo))
+            {
+                hitAnything = true;
+                closestT = tempInfo.t; 
+                info = tempInfo;
+            }
         }
-        return false;
+
+        return hitAnything;
     }
 
     __device__ bool IntersectBVH(const Ray& ray, float tMin, float tMax, ShapeIntersection& info) const
