@@ -10,10 +10,14 @@ struct Camera
     Vector3 position_top_left;
     Vector3 forward;
     Vector3 up;
+    Vector3 desenfoqueU;
+    Vector3 desenfoqueV;
     float focal_length;
     int width;
     int height;
     float fov_degrees_vertical;
+    float blurAngle;
+    float focalDist;
 
     __host__ Camera(
         Vector3 p,
@@ -22,7 +26,9 @@ struct Camera
         float fl,             
         int w,
         int h,
-        const float fovDV
+        const float fovDV,
+        float bAngle = 0.0f,
+        float fDist = 1.0f
     )
     {
         position = p;
@@ -33,16 +39,38 @@ struct Camera
         width = w;
         height = h;
         fov_degrees_vertical = fovDV;
+
+        blurAngle = bAngle;
+        focalDist = fDist;
+
         CalculateViewport();
     }
 
-    __device__ inline Ray GetRay(float x, float y) const
+    __device__ inline Ray GetRay(float x, float y, int seed) const
     {
         const Vector3 sample =
             position_top_left + delta_x * x + delta_y * y;
-        const Vector3 displacement = (sample - position);
 
-        return Ray{ position, normalize(displacement) };
+        const Vector3 p = GetRandomPos(seed);
+        const Vector3 origen = position + p.x * desenfoqueU + p.y * desenfoqueV;
+
+        const Vector3 displacement = (sample - origen);
+
+        return Ray{ origen, normalize(displacement) };
+    }
+
+    __device__ inline Vector3 GetRandomPos(int seed) const
+    {
+        // No se puede usar <random>
+        seed = 1664525 * seed + 1013904223;
+        float r1 = static_cast<float>(seed & 0x00FFFFFF) / static_cast<float>(0x01000000);
+        seed = 1664525 * seed + 1013904223;
+        float r2 = static_cast<float>(seed & 0x00FFFFFF) / static_cast<float>(0x01000000);
+
+        float theta = r1 * 2.0f * PI;
+        float r = sqrtf(r2);
+
+        return Vector3(r * cosf(theta), r * sinf(theta), 0.0f);
     }
 
     __host__ void CalculateViewport()
@@ -69,6 +97,11 @@ struct Camera
             position - focal_length * forward
             + v * half_height_viewport + delta_x * 0.5f
             - right * half_width_viewport + delta_y * 0.5f;
+
+        float blur_radians = (blurAngle * PI / 180.0f);
+        float radioDesenfoque = focalDist * tan(blur_radians / 2.0f);
+        desenfoqueU = right * radioDesenfoque;
+        desenfoqueV = v * radioDesenfoque;
     }
 
     __host__ void MoveCamera(const Vector3& newPos)

@@ -25,7 +25,9 @@ Application::Application()
         1.0f,
         film->GetTamX(),
         film->GetTamY(),
-        60);
+        60,
+        1.5f,
+        0.2f);
 
     // Materiales
     Material rojo = Material(Vector3(1.0f, 0.0f, 0.0f), 0.5f);
@@ -44,7 +46,7 @@ Application::Application()
     {
         float x = -20.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 40.0f);
         float y = 0.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 8.0f);
-        float z = -5.0f - static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 40.0f);
+        float z = 20.0f - static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 40.0f);
         float radio = 0.1f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / 0.5f);
 
         Material mat = materiales[rand() % 3];
@@ -53,6 +55,8 @@ Application::Application()
         shapes.push_back(esfera);
     }
 
+    Shape esfera = CreateSphere(Vector3(0, 0, 0), 1, rojo);
+	shapes.push_back(esfera);
     Shape suelo = CreateQuad(Vector3(50, -1, -50), Vector3(-100, 0, 0), Vector3(0, 0, 100), amarillo);
     shapes.push_back(suelo);
 
@@ -149,9 +153,19 @@ int Application::BuildBVH(std::vector<Shape>& shapes, std::vector<BVHNode>& cpuB
         cpuBVHNodes[nodeIdx].isLeaf = false;
         int mid = start + count / 2; // Punto medio
 
-        // Elegimos un eje para cortar por la mitad
-        // Para mas optimizacion se podria elegir un eje concreto en base a X pero me da pereza y pa esto asi vale
-        int axis = rand() % 3;
+        // Ahora se corta por el eje mas largo
+        Vector3 size = box.bMax - box.bMin;
+        int axis = 0;
+        float max = size.x;
+        if (size.y > max)
+        {
+            axis = 1;
+            max = size.y;
+        }
+        if (size.z > max)
+        {
+            axis = 2;
+        }
 
         std::sort(shapes.begin() + start, shapes.begin() + end, [axis](const Shape& a, const Shape& b) {
             float centerA = (axis == 0) ? a.position.x : (axis == 1 ? a.position.y : a.position.z);

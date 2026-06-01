@@ -94,7 +94,7 @@ __global__ void SamplePixel(GPUPixel* buffer, Camera* cam, Scene* scene)
 		unsigned int seed = workId; // Semilla diferente para cada pixel
 
         for (int s = 0; s < samples; s++) {
-            const Ray ray_primary = cam->GetRay(x + GetRandomFloat(seed), y + GetRandomFloat(seed));
+            const Ray ray_primary = cam->GetRay(x + GetRandomFloat(seed), y + GetRandomFloat(seed), seed);
             finalColor += RayColor(ray_primary, scene);
         }
         finalColor /= config::SAMPLES;
