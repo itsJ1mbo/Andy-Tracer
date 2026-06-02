@@ -1,9 +1,8 @@
-#ifndef _FILM_H
-#define _FILM_H
+#pragma once
 
 #include "PixelToaster/include/PixelToaster.h"
 
-class GPUPixel;
+struct GPUPixel;
 
 class Film 
 {
@@ -27,11 +26,7 @@ private:
 
     float aspectRatio;
 
-    bool missingHeader = true;
-
     PixelToaster::Display window;
 
     PixelToaster::TrueColorPixel* pixels;
 };
-
-#endif

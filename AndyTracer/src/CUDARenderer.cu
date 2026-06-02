@@ -6,10 +6,8 @@
 #include "Film.h"
 #include "AABB.h"
 
-__device__ Vector3 RayColor(const Ray& ray, Scene* scene);
-
 // No se puede usar la cabecera <random> en CUDA así que implementamos un generador pseudo-aleatorio muy simple
-// Asi evitamos enlazar cuRAND que para un aleatorio sencillo no merece la pena
+// Asi evitamos enlazar cuRAND que para un aleatorio sencillo no merece la pena usar las funciones de cuRAND
 __device__ float GetRandomFloat(unsigned int& seed) {
     seed = 1664525 * seed + 1013904223;
     return (static_cast<float>(seed & 0x00FFFFFF) / static_cast<float>(0x01000000));

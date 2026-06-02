@@ -1,5 +1,5 @@
 #pragma once
-#include <iosfwd>
+
 #include <vector>
 #include <PixelToaster/include/PixelToaster.h>
 

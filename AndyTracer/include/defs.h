@@ -1,6 +1,6 @@
 #pragma once
+
 #include "cuda_runtime.h"
-#include "cmath"
 
 constexpr float PI = 3.14159265359;
 

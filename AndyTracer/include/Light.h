@@ -1,9 +1,9 @@
 #pragma once
-#pragma once
+
 #include "defs.h"
 #include "Ray.h"
 
-enum LightType { Directional, Point };
+enum class LightType { Directional, Point };
 
 struct DirectionalData
 {
@@ -28,17 +28,26 @@ struct Light
         PointData pointData;
     };
 
-    __host__ Light() : type(Directional), projectsShadow(false), lightColor(GPUPixel(255)), vec3LightColor(1.0f){}
+    __host__ Light() :
+	    type(LightType::Directional),
+	    projectsShadow(false),
+	    lightColor(GPUPixel(255)),
+	    vec3LightColor(1.0f)
+    {
+    }
 
-    __device__ Vector3 Shade(const Ray& ray, ShapeIntersection& info)
+    __device__ Vector3 Shade(const Ray& ray, const ShapeIntersection& info) const
     {
         switch (type)
         {
-        case Directional:
+        case LightType::Directional:
             return DirectionalShade(ray, info);
             break;
-        case Point:
+        case LightType::Point:
             return PointShade(ray, info);
+            break;
+        default:
+			return Vector3(0.0f);
             break;
         }
     }
@@ -97,7 +106,7 @@ struct Light
 
     __device__ Vector3 GetShadowDir(const Vector3& p)
     {
-        if(type == Point)
+        if(type == LightType::Point)
         {
             return normalize(pointData.position - p);
         }
@@ -108,7 +117,7 @@ __host__ inline Light CreateDirectionalLight(const Vector3& dir, const GPUPixel&
 {
     Light l;
 
-    l.type = Directional;
+    l.type = LightType::Directional;
     l.projectsShadow = false;
     l.directionalData.direction = dir;
     l.lightColor = c;
@@ -121,7 +130,7 @@ __host__ inline Light CreatePointLight(const Vector3& p, const GPUPixel& c)
 {
     Light l;
 
-    l.type = Point;
+    l.type = LightType::Point;
     l.projectsShadow = true;
     l.pointData.position = p;
     l.lightColor = c;

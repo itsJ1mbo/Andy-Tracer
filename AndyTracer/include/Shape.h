@@ -1,4 +1,5 @@
 #pragma once
+
 #include "defs.h"
 #include "Ray.h"
 
@@ -28,7 +29,9 @@ struct Shape
         QuadData quadData;
     };
 
-    __host__ Shape() {}
+    __host__ Shape() : type()
+    {
+    }
 
     __device__ bool Intersect(const Ray& r, float tMin, float tMax, ShapeIntersection& info) const
     {

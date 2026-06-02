@@ -1,7 +1,5 @@
 #pragma once
 
-#include "cuda_runtime.h"
-
 namespace config
 {
 	constexpr int MAX_REFLEXES = 10;
